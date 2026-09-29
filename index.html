@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Browser DAW — Music Production Workspace</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ══════════════════ メニューバー ══════════════════ -->
+<div id="menubar">
+  <div class="app-badge"><span class="app-logo">◉</span><span class="app-name">Browser DAW</span></div>
+  <div class="menu" data-menu="file">ファイル</div>
+  <div class="menu" data-menu="edit">編集</div>
+  <div class="menu" data-menu="track">トラック</div>
+  <div class="menu" data-menu="region">リージョン</div>
+  <div class="menu" data-menu="view">表示</div>
+  <div class="menu" data-menu="help">ヘルプ</div>
+  <div class="menubar-spacer"></div>
+  <div id="cpu-meter" title="CPU / オーディオ負荷">
+    <span class="cpu-label">CPU</span>
+    <div class="cpu-bars"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div id="midi-ind" class="midi-ind" title="MIDI 入力 — クリックで設定">
+    <span class="midi-dot"></span><span class="midi-txt">MIDI</span>
+  </div>
+  <div id="latency-ind" class="lat-ind" title="出力レイテンシ — クリックで詳細">— ms</div>
+  <div id="engine-state" class="engine-state" title="オーディオエンジン">● ENGINE OFF</div>
+</div>
+<div id="menu-popup" class="menu-popup hidden"></div>
+
+<!-- ══════════════════ コントロールバー ══════════════════ -->
+<div id="controlbar">
+  <div class="cb-group cb-left">
+    <button class="cb-btn toggle" id="btn-library"  title="ライブラリ (Y)"><span class="ico ico-library"></span></button>
+    <button class="cb-btn toggle active" id="btn-inspector" title="インスペクタ (I)"><span class="ico ico-inspector"></span></button>
+    <div class="cb-sep"></div>
+    <button class="cb-btn toggle" id="btn-quickhelp" title="クイックヘルプ (⇧/)"><span class="ico ico-help">?</span></button>
+  </div>
+
+  <div class="cb-group cb-transport">
+    <button class="cb-btn tp" id="tp-begin" title="先頭へ (Return)"><svg viewBox="0 0 24 24"><path d="M6 5h2.5v14H6zM19 5v14l-10-7z"/></svg></button>
+    <button class="cb-btn tp" id="tp-rew"   title="巻き戻し (,)"><svg viewBox="0 0 24 24"><path d="M12 5v14L2 12zM22 5v14L12 12z"/></svg></button>
+    <button class="cb-btn tp" id="tp-ff"    title="早送り (.)"><svg viewBox="0 0 24 24"><path d="M2 5v14l10-7zM12 5v14l10-7z"/></svg></button>
+    <button class="cb-btn tp" id="tp-stop"  title="停止 (Space)"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg></button>
+    <button class="cb-btn tp play" id="tp-play" title="再生 (Space)"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></button>
+    <button class="cb-btn tp rec"  id="tp-rec"  title="録音 (R)"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/></svg></button>
+    <button class="cb-btn tp cyc"  id="tp-cycle" title="サイクル (C)"><svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3 1.4-1.4L21 9.6l-5.6 6L14 14.2l3-3H4z"/><path d="M20 16H7l3 3-1.4 1.4L3 14.4 8.6 8.8 10 10.2l-3 3h13z"/></svg></button>
+  </div>
+
+  <div class="cb-group cb-lcd" id="lcd">
+    <div class="lcd-cell lcd-position" id="lcd-position" title="再生ヘッド位置 (小節|拍|ディビジョン|ティック)">
+      <div class="lcd-cap">ポジション</div>
+      <div class="lcd-val" id="lcd-bbt">1 . 1 . 1 . 000</div>
+    </div>
+    <div class="lcd-cell lcd-time" id="lcd-time" title="タイムコード">
+      <div class="lcd-cap">タイム</div>
+      <div class="lcd-val small" id="lcd-smpte">00:00:00.000</div>
+    </div>
+    <div class="lcd-cell" id="lcd-tempo" title="テンポ (ドラッグで変更)">
+      <div class="lcd-cap">テンポ</div>
+      <div class="lcd-val" id="lcd-bpm">120.00</div>
+    </div>
+    <div class="lcd-cell" id="lcd-sig" title="拍子">
+      <div class="lcd-cap">拍子</div>
+      <div class="lcd-val" id="lcd-timesig">4 / 4</div>
+    </div>
+    <div class="lcd-cell" id="lcd-div" title="ディビジョン / クオンタイズ">
+      <div class="lcd-cap">ディビジョン</div>
+      <div class="lcd-val" id="lcd-division">1 / 16</div>
+    </div>
+  </div>
+
+  <div class="cb-group cb-modes">
+    <button class="cb-btn toggle" id="btn-metronome" title="メトロノーム (K)"><span class="ico ico-metro"></span></button>
+    <button class="cb-btn toggle" id="btn-count-in"  title="カウントイン"><span class="ico-txt">1234</span></button>
+    <button class="cb-btn toggle" id="btn-typing" title="ミュージックタイピング (⌘K) — PCキーボードで演奏"><span class="ico-txt">⌨</span></button>
+    <div class="cb-sep"></div>
+    <button class="cb-btn toggle" id="btn-mixer"  title="ミキサー (X)"><span class="ico-txt">MIX</span></button>
+    <button class="cb-btn toggle" id="btn-editor" title="ピアノロール (P)"><span class="ico-txt">EDIT</span></button>
+    <div class="cb-sep"></div>
+    <div class="master-vol" title="マスターボリューム">
+      <span class="ico ico-spk"></span>
+      <input type="range" id="master-volume" min="0" max="1.2" step="0.005" value="0.46">
+    </div>
+    <div class="master-meter" id="master-meter-cb">
+      <div class="mm-ch"><i></i></div><div class="mm-ch"><i></i></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ メイン ══════════════════ -->
+<div id="main">
+
+  <!-- ライブラリ -->
+  <aside id="library" class="pane hidden">
+    <div class="pane-title">ライブラリ</div>
+    <div class="lib-list" id="lib-list"></div>
+  </aside>
+
+  <!-- インスペクタ -->
+  <aside id="inspector" class="pane">
+    <div class="pane-title">インスペクタ</div>
+    <div class="insp-scroll" id="insp-scroll">
+      <div class="insp-block" id="insp-region">
+        <div class="insp-head">リージョン</div>
+        <div class="insp-body" id="insp-region-body"></div>
+      </div>
+      <div class="insp-block" id="insp-track">
+        <div class="insp-head">トラック</div>
+        <div class="insp-body" id="insp-track-body"></div>
+      </div>
+      <div class="insp-channel" id="insp-channel"></div>
+    </div>
+  </aside>
+
+  <!-- アレンジ -->
+  <section id="arrange">
+    <div id="arrange-toolbar">
+      <div class="at-left">
+        <button class="tb-btn" id="btn-add-track" title="トラックを追加 (⌥⌘N)">＋ トラック</button>
+        <button class="tb-btn" id="btn-del-track" title="トラックを削除">－</button>
+        <button class="tb-btn" id="btn-import-audio" title="オーディオファイルを読み込む">♪ 読み込み</button>
+        <div class="cb-sep"></div>
+        <div class="tool-select" title="左クリックツール">
+          <button class="tool active" data-tool="pointer" title="ポインタ (T→1)"><span class="ico ico-pointer"></span></button>
+          <button class="tool" data-tool="pencil"  title="鉛筆 (T→2)"><span class="ico ico-pencil"></span></button>
+          <button class="tool" data-tool="eraser"  title="消しゴム (T→3)"><span class="ico ico-eraser"></span></button>
+          <button class="tool" data-tool="scissors" title="はさみ (T→4)"><span class="ico ico-scissors"></span></button>
+          <button class="tool" data-tool="glue"    title="接着 (T→5)"><span class="ico ico-glue"></span></button>
+          <button class="tool" data-tool="mute"    title="ミュート (T→6)"><span class="ico-txt">M</span></button>
+        </div>
+      </div>
+      <div class="at-right">
+        <label class="snapbox" title="スナップ">スナップ
+          <select id="snap-select">
+            <option value="0">オフ</option>
+            <option value="4">1/1</option>
+            <option value="2">1/2</option>
+            <option value="1">1/4</option>
+            <option value="0.5">1/8</option>
+            <option value="0.25" selected>1/16</option>
+            <option value="0.125">1/32</option>
+            <option value="0.3333333">1/8 三連</option>
+          </select>
+        </label>
+        <div class="zoomctl" title="水平ズーム">
+          <button class="tb-btn sq" id="zoom-out">−</button>
+          <input type="range" id="zoom-h" min="12" max="220" step="1" value="26">
+          <button class="tb-btn sq" id="zoom-in">＋</button>
+        </div>
+        <div class="zoomctl" title="垂直ズーム">
+          <button class="tb-btn sq" id="vzoom-out">▁</button>
+          <input type="range" id="zoom-v" min="42" max="180" step="1" value="76">
+          <button class="tb-btn sq" id="vzoom-in">▇</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="arrange-body">
+      <div id="track-headers-wrap">
+        <div id="th-corner"><span>トラック</span></div>
+        <div id="track-headers"></div>
+      </div>
+      <div id="arrange-right">
+        <div id="ruler-wrap"><canvas id="ruler"></canvas></div>
+        <div id="grid-wrap">
+          <canvas id="grid-canvas"></canvas>
+          <div id="regions-layer"></div>
+          <div id="playhead"></div>
+          <div id="cycle-zone"></div>
+          <div id="marquee" class="hidden"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ══════════════════ 下部エディタ ══════════════════ -->
+<div id="editor-splitter" class="hidden"></div>
+<div id="editor-pane" class="hidden">
+  <div id="editor-tabs">
+    <div class="etab active" data-view="pianoroll">ピアノロール</div>
+    <div class="etab" data-view="stepseq">ステップシーケンサ</div>
+    <div class="etab" data-view="mixer">ミキサー</div>
+    <div class="etab" data-view="wave">オーディオ / 波形</div>
+    <div class="etab-spacer"></div>
+    <div class="etab-info" id="editor-info"></div>
+    <div class="etab-close" id="editor-close">✕</div>
+  </div>
+
+  <div class="eview" id="view-pianoroll">
+    <div class="pr-toolbar">
+      <label class="snapbox">クオンタイズ
+        <select id="pr-quant">
+          <option value="0">オフ</option><option value="1">1/4</option>
+          <option value="0.5">1/8</option><option value="0.25" selected>1/16</option>
+          <option value="0.125">1/32</option><option value="0.3333333">1/8T</option>
+        </select>
+      </label>
+      <button class="tb-btn" id="pr-do-quant" title="選択ノートをクオンタイズ (Q)">Q 適用</button>
+      <div class="cb-sep"></div>
+      <label class="snapbox">ベロシティ <input type="range" id="pr-vel" min="1" max="127" value="96"></label>
+      <span class="pr-velval" id="pr-velval">96</span>
+      <div class="cb-sep"></div>
+      <button class="tb-btn" id="pr-transpose-up" title="+1半音 (↑)">▲ 半音</button>
+      <button class="tb-btn" id="pr-transpose-dn" title="-1半音 (↓)">▼ 半音</button>
+      <button class="tb-btn" id="pr-oct-up" title="+1オクターブ (⇧↑)">▲ Oct</button>
+      <button class="tb-btn" id="pr-oct-dn" title="-1オクターブ (⇧↓)">▼ Oct</button>
+      <div class="cb-sep"></div>
+      <div class="zoomctl"><span class="mini-cap">ズーム</span>
+        <input type="range" id="pr-zoom" min="24" max="260" step="1" value="80"></div>
+      <div class="pr-hint" id="pr-hint">リージョンをダブルクリックで編集</div>
+    </div>
+    <div class="pr-body">
+      <div class="pr-keys-wrap"><canvas id="pr-keys"></canvas></div>
+      <div class="pr-grid-wrap">
+        <div class="pr-ruler-wrap"><canvas id="pr-ruler"></canvas></div>
+        <div class="pr-scroll" id="pr-scroll">
+          <canvas id="pr-grid"></canvas>
+          <div id="pr-notes"></div>
+          <div id="pr-playhead"></div>
+          <div id="pr-marquee" class="hidden"></div>
+        </div>
+        <div class="pr-vel-wrap"><canvas id="pr-velcanvas"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="eview hidden" id="view-stepseq">
+    <div class="ss-toolbar">
+      <span class="mini-cap">ステップシーケンサ — ドラムトラック選択時に有効</span>
+      <div class="cb-sep"></div>
+      <label class="snapbox">長さ <select id="ss-bars"><option>1</option><option selected>2</option><option>4</option><option>8</option></select> 小節</label>
+      <button class="tb-btn" id="ss-clear">クリア</button>
+      <button class="tb-btn" id="ss-rand">ランダム</button>
+    </div>
+    <div class="ss-body" id="ss-body"></div>
+  </div>
+
+  <div class="eview hidden" id="view-mixer">
+    <div class="mixer-strips" id="mixer-strips"></div>
+  </div>
+
+  <div class="eview hidden" id="view-wave">
+    <div class="we-toolbar">
+      <button class="tb-btn accent" id="we-play" title="選択範囲を試聴">▶</button>
+      <button class="tb-btn" id="we-stop" title="停止">■</button>
+      <div class="cb-sep"></div>
+      <button class="tb-btn" id="we-sel-all">全選択</button>
+      <button class="tb-btn sq" id="we-zoom-out">−</button>
+      <button class="tb-btn sq" id="we-zoom-in">＋</button>
+      <button class="tb-btn" id="we-zoom-fit">全体</button>
+      <div class="cb-sep"></div>
+      <button class="tb-btn" id="we-normalize">ノーマライズ</button>
+      <button class="tb-btn" id="we-gain">ゲイン…</button>
+      <button class="tb-btn" id="we-fadein">フェードイン</button>
+      <button class="tb-btn" id="we-fadeout">フェードアウト</button>
+      <button class="tb-btn" id="we-reverse">リバース</button>
+      <button class="tb-btn" id="we-silence">無音化</button>
+      <button class="tb-btn" id="we-invert">位相反転</button>
+      <button class="tb-btn" id="we-dc">DC除去</button>
+      <div class="cb-sep"></div>
+      <button class="tb-btn" id="we-trim">切り出し</button>
+      <button class="tb-btn" id="we-cut">削除</button>
+      <button class="tb-btn" id="we-pitch">ピッチ…</button>
+      <button class="tb-btn" id="we-resample">SR変換…</button>
+      <div class="cb-sep"></div>
+      <button class="tb-btn" id="we-undo">↶</button>
+      <button class="tb-btn" id="we-redo">↷</button>
+      <button class="tb-btn accent" id="we-export">書き出し…</button>
+    </div>
+    <div class="we-info" id="we-info"></div>
+    <div class="we-scroll" id="we-scroll">
+      <div id="we-spacer"></div>
+      <canvas id="we-canvas"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ オーバーレイ ══════════════════ -->
+<div id="splash">
+  <div class="splash-card">
+    <div class="splash-logo">◉</div>
+    <h1>Browser DAW</h1>
+    <p class="splash-sub">Local music production in a modern browser</p>
+    <button id="splash-start">プロジェクトを開く</button>
+    <div class="splash-note">クリックでオーディオエンジンを起動します（ブラウザの仕様）</div>
+  </div>
+</div>
+
+<div id="modal" class="hidden"><div class="modal-card" id="modal-card"></div></div>
+<div id="ctxmenu" class="ctxmenu hidden"></div>
+<div id="dropzone"><div class="dz-inner"><div class="dz-icon">♪</div>
+  <div class="dz-title">オーディオファイルをドロップ</div>
+  <div class="dz-sub">WAV / AIFF / MP3 / M4A / OGG / FLAC — 最大 96 kHz・24 bit</div></div></div>
+<div id="toast-wrap"></div>
+<div id="quickhelp" class="quickhelp hidden"></div>
+
+<script src="js/vendor/lame.min.js"></script>
+<script src="js/util.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/wavetable.js"></script>
+<script src="js/spectra.js"></script>
+<script src="js/physmodel.js"></script>
+<script src="js/instruments.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/midi.js"></script>
+<script src="js/project.js"></script>
+<script src="js/transport.js"></script>
+<script src="js/arrange.js"></script>
+<script src="js/pianoroll.js"></script>
+<script src="js/stepseq.js"></script>
+<script src="js/mixer.js"></script>
+<script src="js/inspector.js"></script>
+<script src="js/waveeditor.js"></script>
+<script src="js/spectra-ui.js"></script>
+<script src="js/mastering.js"></script>
+<script src="js/arp.js"></script>
+<script src="js/stems.js"></script>
+<script src="js/menus.js"></script>
+<script src="js/wav.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
